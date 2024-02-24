@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "fast-world-actions",
+	"version": "${version}",
+	"name": "Fast World Actions",
+	"description": "Quickly applying changes to the world",
+	"authors": [
+		"BasiqueEvangelist"
+	],
+	"contact": {
+		"sources": "https://github.com/BasiqueEvangelist/FastWorldActions"
+	},
+	"license": "MPL-2.0",
+	"icon": "assets/fast-world-actions/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"me.basiqueevangelist.fastworldactions.FastWorldActions"
+		]
+	},
+	"mixins": [
+		"fast-world-actions.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.15.7",
+		"minecraft": "~1.20.4",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
