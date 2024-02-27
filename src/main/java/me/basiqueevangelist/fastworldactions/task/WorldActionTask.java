@@ -1,61 +1,87 @@
 package me.basiqueevangelist.fastworldactions.task;
 
-import me.basiqueevangelist.fastworldactions.WorldAction;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.world.World;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jetbrains.annotations.ApiStatus;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class WorldActionTask {
-    private static final Logger LOGGER = LoggerFactory.getLogger("FWA/WorldActionTask");
-    private static final List<WorldActionTask> TASKS = new ArrayList<>();
+    private static final List<WorldActionTask> SERVER_TASKS = new ArrayList<>();
+    private static final List<WorldActionTask> CLIENT_TASKS = new ArrayList<>();
 
-    private final World world;
-    private final Queue<WorldAction.SectionInfo> sections;
-    private final String name;
+    @ApiStatus.Internal
+    public volatile static int SERVER_SECTIONS = 0;
+    @ApiStatus.Internal
+    public volatile static int CLIENT_SECTIONS = 0;
 
-    protected WorldActionTask(World world, Collection<WorldAction.SectionInfo> sections, String name) {
+
+    protected final World world;
+    protected final String name;
+
+    public WorldActionTask(World world, String name) {
         this.world = world;
-        this.sections = new ArrayDeque<>(sections);
         this.name = name;
     }
 
     public static void init() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
-            TASKS.removeIf(x -> {
+            SERVER_TASKS.removeIf(x -> {
                 x.tick();
                 return x.isDone();
             });
+
+            int sections = 0;
+
+            for (WorldActionTask x : SERVER_TASKS) {
+                sections += x.sectionsRemaining();
+            }
+
+            SERVER_SECTIONS = sections;
         });
 
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-            TASKS.clear();
+            SERVER_TASKS.clear();
         });
     }
 
-    public void tick() {
-        long startNanos = System.nanoTime();
-        int totalRun = 0;
+    public abstract void tick();
 
-        // 5 ms
-        while (!isDone() && System.nanoTime() - startNanos < 20 * 1000000) {
-            runOn(sections.poll());
-            totalRun++;
-        }
+    public abstract boolean isDone();
 
-//        LOGGER.info("{}: ran on {} sections in {} ms", name, totalRun, (double)(System.nanoTime() - startNanos) / 1000000);
-    }
-
-    public abstract void runOn(WorldAction.SectionInfo section);
-
-    public boolean isDone() {
-        return sections.isEmpty();
-    }
+    public abstract int sectionsRemaining();
 
     public void start() {
-        TASKS.add(this);
+        if (world.isClient)
+            CLIENT_TASKS.add(this);
+        else
+            SERVER_TASKS.add(this);
+    }
+
+    @Environment(EnvType.CLIENT)
+    public static class Client {
+        public static void init() {
+            ClientTickEvents.END_CLIENT_TICK.register(client -> {
+                CLIENT_TASKS.removeIf(x -> {
+                    if (x.world != client.world) return true;
+
+                    x.tick();
+                    return x.isDone();
+                });
+
+                int sections = 0;
+
+                for (WorldActionTask x : CLIENT_TASKS) {
+                    sections += x.sectionsRemaining();
+                }
+
+                CLIENT_SECTIONS = sections;
+            });
+        }
     }
 }

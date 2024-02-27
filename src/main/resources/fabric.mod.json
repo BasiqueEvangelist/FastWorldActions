@@ -16,6 +16,9 @@
 	"entrypoints": {
 		"main": [
 			"me.basiqueevangelist.fastworldactions.FastWorldActions"
+		],
+		"client": [
+			"me.basiqueevangelist.fastworldactions.client.FastWorldActionsClient"
 		]
 	},
 	"mixins": [

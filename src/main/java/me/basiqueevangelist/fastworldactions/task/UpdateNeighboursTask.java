@@ -1,17 +1,23 @@
 package me.basiqueevangelist.fastworldactions.task;
 
-import me.basiqueevangelist.fastworldactions.WorldAction;
 import net.minecraft.world.World;
 
 import java.util.Collection;
 
-public class UpdateNeighboursTask extends WorldActionTask {
-    public UpdateNeighboursTask(World world, Collection<WorldAction.SectionInfo> sections) {
-        super(world, sections, "fast-world-actions:update_neighbours");
+public class UpdateNeighboursTask extends PostWorldActionTask {
+    private final boolean notifyNeighbours;
+    private final boolean prepareState;
+
+    public UpdateNeighboursTask(World world, SetBlocksTask parent, boolean notifyNeighbours, boolean prepareState) {
+        super(world, "fast-world-actions:update_neighbours", parent);
+        this.notifyNeighbours = notifyNeighbours;
+        this.prepareState = prepareState;
     }
 
     @Override
-    public void runOn(WorldAction.SectionInfo section) {
+    public void runOn(SectionUpdateInfo section) {
+        if (section.chunk().getWorld().isClient) return;
+
 //        if ((flags & Block.NOTIFY_NEIGHBORS) != 0) {
 //            this.updateNeighbors(pos, blockState.getBlock());
 //            if (!this.isClient && state.hasComparatorOutput()) {
@@ -26,16 +32,21 @@ public class UpdateNeighboursTask extends WorldActionTask {
 //            state.prepare(this, pos, i, maxUpdateDepth - 1);
 //        }
 
-        for (var change : section.changes().entrySet()) {
-            var prev = section.previous().get(change.getKey());
+        section.forEachChange((pos, oldState, newState) -> {
+            if (notifyNeighbours) {
+                section.chunk().getWorld().updateNeighbors(pos, oldState.getBlock());
+                if (!section.chunk().getWorld().isClient && newState.hasComparatorOutput()) {
+                    section.chunk().getWorld().updateComparators(pos, newState.getBlock());
+                }
+            }
 
-            section.chunk().getWorld().updateNeighbors(change.getKey(), prev.getBlock());
+            if (prepareState) {
+                oldState.prepare(section.chunk().getWorld(), pos, 2);
+                newState.updateNeighbors(section.chunk().getWorld(), pos, 2);
+                newState.prepare(section.chunk().getWorld(), pos, 2);
+            }
 
-            prev.prepare(section.chunk().getWorld(), change.getKey(), 2);
-            change.getValue().updateNeighbors(section.chunk().getWorld(), change.getKey(), 2);
-            change.getValue().prepare(section.chunk().getWorld(), change.getKey(), 2);
-
-            section.chunk().getWorld().onBlockChanged(change.getKey(), prev, change.getValue());
-        }
+            section.chunk().getWorld().onBlockChanged(pos, oldState, newState);
+        });
     }
 }
