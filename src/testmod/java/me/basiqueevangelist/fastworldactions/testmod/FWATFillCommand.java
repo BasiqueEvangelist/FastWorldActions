@@ -38,6 +38,8 @@ public final class FWATFillCommand {
 
         FastWorldActions.action(new BoxFillWorldAction(box, with))
             .syncToPlayers()
+            .notifyNeighbours(false)
+            .forceState(true)
             .run(ctx.getSource().getWorld());
 
         return 0;

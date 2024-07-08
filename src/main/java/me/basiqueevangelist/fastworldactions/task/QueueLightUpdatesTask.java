@@ -22,18 +22,18 @@ public class QueueLightUpdatesTask extends PostWorldActionTask {
             if (ChunkLightProvider.needsLightUpdate(section.chunk(), pos, oldState, newState)) {
                 section.chunk().getChunkSkyLight().isSkyLightAccessible(section.chunk(), sx, pos.getY(), sz);
 
-                if (world.isClient) {
-                    ((ChunkLightProviderAccessor) world.getChunkManager().getLightingProvider().get(LightType.BLOCK)).callMethod_51529(pos.asLong());
-                    ((ChunkLightProviderAccessor) world.getChunkManager().getLightingProvider().get(LightType.SKY)).callMethod_51529(pos.asLong());
-                } else {
-                    world.getChunkManager().getLightingProvider().checkBlock(pos);
-                }
+//                if (world.isClient) {
+//                    ((ChunkLightProviderAccessor) world.getChunkManager().getLightingProvider().get(LightType.BLOCK)).callMethod_51529(pos.asLong());
+//                    ((ChunkLightProviderAccessor) world.getChunkManager().getLightingProvider().get(LightType.SKY)).callMethod_51529(pos.asLong());
+//                } else {
+                world.getChunkManager().getLightingProvider().checkBlock(pos);
+//                }
             }
         });
     }
 
     @Override
     public long timeQuotaMs() {
-        return world.isClient ? 2 : 10;
+        return world.isClient ? 1 : 10;
     }
 }
