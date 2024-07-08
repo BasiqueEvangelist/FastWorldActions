@@ -1,20 +1,20 @@
 package me.basiqueevangelist.fastworldactions.action;
 
-import net.minecraft.block.Block;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public final class WorldActionSync {
-    private static final Map<Identifier, SyncData<?>> ACTIONS_BY_ID = new HashMap<>();
+    private static final Map<ResourceLocation, SyncData<?>> ACTIONS_BY_ID = new HashMap<>();
     private static final Map<Class<?>, SyncData<?>> ACTIONS_BY_CLASS = new HashMap<>();
 
-    public static <T extends WorldAction> void register(Identifier id, Class<T> klass, PacketByteBuf.PacketReader<T> reader, PacketByteBuf.PacketWriter<T> writer) {
+    public static <T extends WorldAction> void register(ResourceLocation id, Class<T> klass, FriendlyByteBuf.Reader<T> reader, FriendlyByteBuf.Writer<T> writer) {
         var syncData = new SyncData<>(id, reader, writer);
 
         ACTIONS_BY_ID.put(id, syncData);
@@ -22,18 +22,18 @@ public final class WorldActionSync {
     }
 
     @SuppressWarnings("unchecked")
-    public static void write(PacketByteBuf buf, WorldAction action) {
+    public static void write(FriendlyByteBuf buf, WorldAction action) {
         var syncData = ACTIONS_BY_CLASS.get(action.getClass());
 
         if (syncData == null)
             throw new IllegalStateException(action.getClass().getName() + " isn't syncable.");
 
-        buf.writeIdentifier(syncData.id());
-        ((PacketByteBuf.PacketWriter<Object>) syncData.writer).accept(buf, action);
+        buf.writeResourceLocation(syncData.id());
+        ((FriendlyByteBuf.Writer<Object>) syncData.writer).accept(buf, action);
     }
 
-    public static WorldAction read(PacketByteBuf buf) {
-        var id = buf.readIdentifier();
+    public static WorldAction read(FriendlyByteBuf buf) {
+        var id = buf.readResourceLocation();
         var syncData = ACTIONS_BY_ID.get(id);
 
         if (syncData == null)
@@ -44,45 +44,45 @@ public final class WorldActionSync {
 
     @ApiStatus.Internal
     public static void init() {
-        register(new Identifier("fast-world-actions", "fixed"), FixedWorldAction.class,
-            buf -> new FixedWorldAction(buf.readMap(PacketByteBuf::readBlockPos, buf1 -> buf1.readRegistryValue(Block.STATE_IDS))),
-            (buf, action) -> buf.writeMap(action.changes(), PacketByteBuf::writeBlockPos, (buf1, state) -> buf1.writeRegistryValue(Block.STATE_IDS, state))
+        register(new ResourceLocation("fast-world-actions", "fixed"), FixedWorldAction.class,
+            buf -> new FixedWorldAction(buf.readMap(FriendlyByteBuf::readBlockPos, buf1 -> buf1.readById(Block.BLOCK_STATE_REGISTRY))),
+            (buf, action) -> buf.writeMap(action.changes(), FriendlyByteBuf::writeBlockPos, (buf1, state) -> buf1.writeId(Block.BLOCK_STATE_REGISTRY, state))
         );
 
-        register(new Identifier("fast-world-actions", "sphere_fill"), SphereFillWorldAction.class,
-            buf -> new SphereFillWorldAction(buf.readBlockPos(), buf.readVarInt(), buf.readRegistryValue(Block.STATE_IDS)),
+        register(new ResourceLocation("fast-world-actions", "sphere_fill"), SphereFillWorldAction.class,
+            buf -> new SphereFillWorldAction(buf.readBlockPos(), buf.readVarInt(), buf.readById(Block.BLOCK_STATE_REGISTRY)),
             (buf, action) -> {
                 buf.writeBlockPos(action.center());
                 buf.writeVarInt(action.radius());
-                buf.writeRegistryValue(Block.STATE_IDS, action.targetState());
+                buf.writeId(Block.BLOCK_STATE_REGISTRY, action.targetState());
             }
         );
 
-        register(new Identifier("fast-world-actions", "box_fill"), BoxFillWorldAction.class,
+        register(new ResourceLocation("fast-world-actions", "box_fill"), BoxFillWorldAction.class,
             buf -> {
-                var box = BlockBox.create(buf.readBlockPos(), buf.readBlockPos());
-                var targetState = buf.readRegistryValue(Block.STATE_IDS);
+                var box = BoundingBox.fromCorners(buf.readBlockPos(), buf.readBlockPos());
+                var targetState = buf.readById(Block.BLOCK_STATE_REGISTRY);
 
                 return new BoxFillWorldAction(box, targetState);
             },
             (buf, action) -> {
                 buf.writeBlockPos(new BlockPos(
-                    action.box().getMinX(),
-                    action.box().getMinY(),
-                    action.box().getMinZ()
+                    action.box().minX(),
+                    action.box().minY(),
+                    action.box().minZ()
                 ));
 
                 buf.writeBlockPos(new BlockPos(
-                    action.box().getMaxX(),
-                    action.box().getMaxY(),
-                    action.box().getMaxZ()
+                    action.box().maxX(),
+                    action.box().maxY(),
+                    action.box().maxZ()
                 ));
 
-                buf.writeRegistryValue(Block.STATE_IDS, action.targetState());
+                buf.writeId(Block.BLOCK_STATE_REGISTRY, action.targetState());
             }
         );
     }
 
-    private record SyncData<T extends WorldAction>(Identifier id, PacketByteBuf.PacketReader<T> reader, PacketByteBuf.PacketWriter<T> writer) {
+    private record SyncData<T extends WorldAction>(ResourceLocation id, FriendlyByteBuf.Reader<T> reader, FriendlyByteBuf.Writer<T> writer) {
     }
 }

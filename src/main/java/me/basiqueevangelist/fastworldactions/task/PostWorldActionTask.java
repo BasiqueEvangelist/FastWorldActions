@@ -1,9 +1,6 @@
 package me.basiqueevangelist.fastworldactions.task;
 
-import me.basiqueevangelist.fastworldactions.FastWorldActions;
-import net.minecraft.world.World;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.minecraft.world.level.Level;
 
 import java.util.*;
 
@@ -11,8 +8,8 @@ public abstract class PostWorldActionTask extends WorldActionTask {
     private final Queue<SectionUpdateInfo> sections;
     private final SetBlocksTask parent;
 
-    protected PostWorldActionTask(World world, String name, SetBlocksTask parent) {
-        super(world, name);
+    protected PostWorldActionTask(Level level, String name, SetBlocksTask parent) {
+        super(level, name);
         this.parent = parent;
         this.sections = new ArrayDeque<>();
     }

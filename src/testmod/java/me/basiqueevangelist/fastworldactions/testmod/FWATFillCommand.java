@@ -4,43 +4,43 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import me.basiqueevangelist.fastworldactions.FastWorldActions;
 import me.basiqueevangelist.fastworldactions.action.BoxFillWorldAction;
-import net.minecraft.block.BlockState;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.command.argument.BlockStateArgumentType;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.util.math.BlockBox;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.blocks.BlockStateArgument;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
 public final class FWATFillCommand {
     private FWATFillCommand() {
 
     }
 
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess access) {
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher, CommandBuildContext access) {
         dispatcher.register(literal("fwat")
             .then(literal("fill")
-                .then(argument("from", BlockPosArgumentType.blockPos())
-                    .then(argument("to", BlockPosArgumentType.blockPos())
-                        .then(argument("with", BlockStateArgumentType.blockState(access))
+                .then(argument("from", BlockPosArgument.blockPos())
+                    .then(argument("to", BlockPosArgument.blockPos())
+                        .then(argument("with", BlockStateArgument.block(access))
                             .executes(FWATFillCommand::fill))))));
     }
 
-    private static int fill(CommandContext<ServerCommandSource> ctx) {
-        BlockPos from = BlockPosArgumentType.getBlockPos(ctx, "from");
-        BlockPos to = BlockPosArgumentType.getBlockPos(ctx, "to");
-        BlockState with = BlockStateArgumentType.getBlockState(ctx, "with").getBlockState();
+    private static int fill(CommandContext<CommandSourceStack> ctx) {
+        BlockPos from = BlockPosArgument.getBlockPos(ctx, "from");
+        BlockPos to = BlockPosArgument.getBlockPos(ctx, "to");
+        BlockState with = BlockStateArgument.getBlock(ctx, "with").getState();
 
-        var box = BlockBox.create(from, to);
+        var box = BoundingBox.fromCorners(from, to);
 
         FastWorldActions.action(new BoxFillWorldAction(box, with))
             .syncToPlayers()
             .notifyNeighbours(false)
             .forceState(true)
-            .run(ctx.getSource().getWorld());
+            .run(ctx.getSource().getLevel());
 
         return 0;
     }

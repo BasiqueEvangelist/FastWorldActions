@@ -3,13 +3,13 @@
     "package": "me.basiqueevangelist.fastworldactions.mixin",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
-        "ServerChunkManagerAccessor"
+        "ServerChunkCacheMixin"
     ],
     "injectors": {
         "defaultRequire": 1
     },
     "client": [
-        "client.ChunkLightProviderAccessor",
-        "client.DebugHudMixin"
+        "client.LightEngineAccessor",
+        "client.DebugScreenOverlayMixin"
     ]
 }

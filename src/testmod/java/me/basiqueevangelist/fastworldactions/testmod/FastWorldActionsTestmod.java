@@ -4,10 +4,10 @@ import me.basiqueevangelist.fastworldactions.FastWorldActions;
 import me.basiqueevangelist.fastworldactions.action.SphereFillWorldAction;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.block.Blocks;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Blocks;
 
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.literal;
 
 public class FastWorldActionsTestmod implements ModInitializer {
     @Override
@@ -17,9 +17,9 @@ public class FastWorldActionsTestmod implements ModInitializer {
 
             dispatcher.register(literal("explosion")
                 .executes(ctx -> {
-                    var center = BlockPos.ofFloored(ctx.getSource().getPosition());
+                    var center = BlockPos.containing(ctx.getSource().getPosition());
 
-                    var world = ctx.getSource().getWorld();
+                    var world = ctx.getSource().getLevel();
                     int radius = 128;
 //                    var pos = new BlockPos.Mutable();
 //                    int radiusSq = radius * radius;
@@ -42,7 +42,7 @@ public class FastWorldActionsTestmod implements ModInitializer {
 //
 //                    FastWorldActions.run(world, new MapWorldAction(changes));
 
-                    FastWorldActions.action(new SphereFillWorldAction(center, radius, Blocks.AIR.getDefaultState()))
+                    FastWorldActions.action(new SphereFillWorldAction(center, radius, Blocks.AIR.defaultBlockState()))
                         .syncToPlayers()
                         .run(world);
 

@@ -1,13 +1,12 @@
 package me.basiqueevangelist.fastworldactions.action;
 
 import it.unimi.dsi.fastutil.longs.*;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class FixedWorldAction implements WorldAction {
     private final Long2ObjectMap<Map<BlockPos, BlockState>> sections;
@@ -23,7 +22,7 @@ public class FixedWorldAction implements WorldAction {
 //            int sz = entry.getKey().getZ() >> 4;
 //
 //            long sPos = ChunkSectionPos.asLong(sx, sy, sz);
-            long sPos = ChunkSectionPos.from(entry.getKey()).asLong();
+            long sPos = SectionPos.of(entry.getKey()).asLong();
 
             var map = sections.computeIfAbsent(sPos, unused -> new HashMap<>());
             map.put(entry.getKey(), entry.getValue());

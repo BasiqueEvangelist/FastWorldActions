@@ -1,12 +1,9 @@
 package me.basiqueevangelist.fastworldactions.action;
 
 import it.unimi.dsi.fastutil.longs.LongCollection;
-import it.unimi.dsi.fastutil.longs.LongList;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
-
 import java.util.function.BiConsumer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 
 public interface WorldAction {
     LongCollection chunkSections();

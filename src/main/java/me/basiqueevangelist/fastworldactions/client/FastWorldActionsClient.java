@@ -16,7 +16,7 @@ public class FastWorldActionsClient implements ClientModInitializer {
                 .notifyNeighbours(packet.notifyNeighbours())
                 .notifyListeners(packet.notifyListeners())
                 .forceState(packet.forceState())
-                .run(player.clientWorld);
+                .run(player.clientLevel);
         });
     }
 }

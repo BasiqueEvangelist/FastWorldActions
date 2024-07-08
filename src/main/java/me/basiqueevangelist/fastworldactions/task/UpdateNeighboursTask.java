@@ -1,22 +1,20 @@
 package me.basiqueevangelist.fastworldactions.task;
 
-import net.minecraft.world.World;
-
-import java.util.Collection;
+import net.minecraft.world.level.Level;
 
 public class UpdateNeighboursTask extends PostWorldActionTask {
     private final boolean notifyNeighbours;
     private final boolean prepareState;
 
-    public UpdateNeighboursTask(World world, SetBlocksTask parent, boolean notifyNeighbours, boolean prepareState) {
-        super(world, "fast-world-actions:update_neighbours", parent);
+    public UpdateNeighboursTask(Level level, SetBlocksTask parent, boolean notifyNeighbours, boolean prepareState) {
+        super(level, "fast-world-actions:update_neighbours", parent);
         this.notifyNeighbours = notifyNeighbours;
         this.prepareState = prepareState;
     }
 
     @Override
     public void runOn(SectionUpdateInfo section) {
-        if (section.chunk().getWorld().isClient) return;
+        if (section.chunk().getLevel().isClientSide) return;
 
 //        if ((flags & Block.NOTIFY_NEIGHBORS) != 0) {
 //            this.updateNeighbors(pos, blockState.getBlock());
@@ -34,19 +32,19 @@ public class UpdateNeighboursTask extends PostWorldActionTask {
 
         section.forEachChange((pos, oldState, newState) -> {
             if (notifyNeighbours) {
-                section.chunk().getWorld().updateNeighbors(pos, oldState.getBlock());
-                if (!section.chunk().getWorld().isClient && newState.hasComparatorOutput()) {
-                    section.chunk().getWorld().updateComparators(pos, newState.getBlock());
+                section.chunk().getLevel().blockUpdated(pos, oldState.getBlock());
+                if (!section.chunk().getLevel().isClientSide && newState.hasAnalogOutputSignal()) {
+                    section.chunk().getLevel().updateNeighbourForOutputSignal(pos, newState.getBlock());
                 }
             }
 
             if (prepareState) {
-                oldState.prepare(section.chunk().getWorld(), pos, 2);
-                newState.updateNeighbors(section.chunk().getWorld(), pos, 2);
-                newState.prepare(section.chunk().getWorld(), pos, 2);
+                oldState.updateIndirectNeighbourShapes(section.chunk().getLevel(), pos, 2);
+                newState.updateNeighbourShapes(section.chunk().getLevel(), pos, 2);
+                newState.updateIndirectNeighbourShapes(section.chunk().getLevel(), pos, 2);
             }
 
-            section.chunk().getWorld().onBlockChanged(pos, oldState, newState);
+            section.chunk().getLevel().onBlockStateChange(pos, oldState, newState);
         });
     }
 }

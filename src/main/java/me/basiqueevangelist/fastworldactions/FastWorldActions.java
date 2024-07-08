@@ -4,7 +4,6 @@ import me.basiqueevangelist.fastworldactions.action.WorldAction;
 import me.basiqueevangelist.fastworldactions.action.WorldActionSync;
 import me.basiqueevangelist.fastworldactions.task.*;
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,17 +1,14 @@
 package me.basiqueevangelist.fastworldactions.task;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 
-import java.util.Map;
-import java.util.function.BiConsumer;
-
-public record SectionUpdateInfo(long pos, WorldChunk chunk, ChunkSection section,
+public record SectionUpdateInfo(long pos, LevelChunk chunk, LevelChunkSection section,
                                 BlockState[] changes, BlockState[] previous) {
-    public static SectionUpdateInfo create(long pos, WorldChunk chunk, ChunkSection section) {
+    public static SectionUpdateInfo create(long pos, LevelChunk chunk, LevelChunkSection section) {
         return new SectionUpdateInfo(pos, chunk, section, new BlockState[4096], new BlockState[4096]);
     }
 
@@ -28,11 +25,11 @@ public record SectionUpdateInfo(long pos, WorldChunk chunk, ChunkSection section
 
     public void forEachChange(ChangeConsumer consumer) {
         var start = new BlockPos(
-            ChunkSectionPos.unpackX(pos) * 16,
-            ChunkSectionPos.unpackY(pos) * 16,
-            ChunkSectionPos.unpackZ(pos) * 16
+            SectionPos.x(pos) * 16,
+            SectionPos.y(pos) * 16,
+            SectionPos.z(pos) * 16
         );
-        var pos = new BlockPos.Mutable();
+        var pos = new BlockPos.MutableBlockPos();
 
         for (int x = 0; x < 16; x++) {
             for (int y = 0; y < 16; y++) {

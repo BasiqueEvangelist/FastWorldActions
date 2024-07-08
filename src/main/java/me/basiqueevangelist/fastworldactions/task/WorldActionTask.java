@@ -5,7 +5,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.world.World;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.ApiStatus;
 
 import java.util.ArrayList;
@@ -21,11 +21,11 @@ public abstract class WorldActionTask {
     public volatile static int CLIENT_SECTIONS = 0;
 
 
-    protected final World world;
+    protected final Level level;
     protected final String name;
 
-    public WorldActionTask(World world, String name) {
-        this.world = world;
+    public WorldActionTask(Level level, String name) {
+        this.level = level;
         this.name = name;
     }
 
@@ -57,7 +57,7 @@ public abstract class WorldActionTask {
     public abstract int sectionsRemaining();
 
     public void start() {
-        if (world.isClient)
+        if (level.isClientSide)
             CLIENT_TASKS.add(this);
         else
             SERVER_TASKS.add(this);
@@ -68,7 +68,7 @@ public abstract class WorldActionTask {
         public static void init() {
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
                 CLIENT_TASKS.removeIf(x -> {
-                    if (x.world != client.world) return true;
+                    if (x.level != client.level) return true;
 
                     x.tick();
                     return x.isDone();

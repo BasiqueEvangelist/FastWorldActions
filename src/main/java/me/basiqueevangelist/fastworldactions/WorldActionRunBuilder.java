@@ -3,10 +3,10 @@ package me.basiqueevangelist.fastworldactions;
 import me.basiqueevangelist.fastworldactions.action.WorldAction;
 import me.basiqueevangelist.fastworldactions.task.*;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.world.World;
+import net.minecraft.core.SectionPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 public final class WorldActionRunBuilder {
     private final WorldAction action;
@@ -39,13 +39,13 @@ public final class WorldActionRunBuilder {
         return this;
     }
 
-    public void run(World world) {
-        var setBlocks = new SetBlocksTask(world, action);
+    public void run(Level level) {
+        var setBlocks = new SetBlocksTask(level, action);
 
-        var updateHeightmaps = new UpdateHeightmapsTask(world, setBlocks);
-        var stateReplacedAdded = new StateReplacedAddedTask(world, setBlocks);
-        var updateNeighbours = new UpdateNeighboursTask(world, setBlocks, this.notifyNeighbours, !forceState);
-        var queueLightUpdates = new QueueLightUpdatesTask(world, setBlocks);
+        var updateHeightmaps = new UpdateHeightmapsTask(level, setBlocks);
+        var stateReplacedAdded = new StateReplacedAddedTask(level, setBlocks);
+        var updateNeighbours = new UpdateNeighboursTask(level, setBlocks, this.notifyNeighbours, !forceState);
+        var queueLightUpdates = new QueueLightUpdatesTask(level, setBlocks);
 
         setBlocks.addChild(updateHeightmaps);
         setBlocks.addChild(stateReplacedAdded);
@@ -59,15 +59,15 @@ public final class WorldActionRunBuilder {
         queueLightUpdates.start();
 
         if (this.notifyListeners) {
-            var updateListeners = new UpdateListenersTask(world, setBlocks);
+            var updateListeners = new UpdateListenersTask(level, setBlocks);
             setBlocks.addChild(updateListeners);
             updateListeners.start();
         }
 
-        if (sync && world instanceof ServerWorld sw) {
+        if (sync && level instanceof ServerLevel sl) {
             var packet = new WorldActionPacket(action, notifyNeighbours, notifyListeners, forceState);
 
-            for (ServerPlayerEntity player : sw.getPlayers()) {
+            for (ServerPlayer player : sl.players()) {
                 if (!isNear(player)) continue;
 
                 ServerPlayNetworking.send(player, packet);
@@ -75,13 +75,13 @@ public final class WorldActionRunBuilder {
         }
     }
 
-    private boolean isNear(ServerPlayerEntity player) {
+    private boolean isNear(ServerPlayer player) {
         for (var sectionPos : action.chunkSections()) {
-            int x = ChunkSectionPos.unpackX(sectionPos) * 16 + 8;
-            int y = ChunkSectionPos.unpackY(sectionPos) * 16 + 8;
-            int z = ChunkSectionPos.unpackZ(sectionPos) * 16 + 8;
+            int x = SectionPos.x(sectionPos) * 16 + 8;
+            int y = SectionPos.y(sectionPos) * 16 + 8;
+            int z = SectionPos.z(sectionPos) * 16 + 8;
 
-            if (player.squaredDistanceTo(x, y, z) < 4096)
+            if (player.distanceToSqr(x, y, z) < 4096)
                 return true;
         }
 
