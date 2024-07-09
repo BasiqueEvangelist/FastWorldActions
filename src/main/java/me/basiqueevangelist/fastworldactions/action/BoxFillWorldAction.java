@@ -4,12 +4,24 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongCollection;
 import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.BiConsumer;
+
+import me.basiqueevangelist.fastworldactions.util.CodecUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 
 public class BoxFillWorldAction implements WorldAction {
+    public static final StreamCodec<RegistryFriendlyByteBuf, BoxFillWorldAction> STREAM_CODEC = StreamCodec.composite(
+        CodecUtils.BOUNDING_BOX, BoxFillWorldAction::box,
+        ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), BoxFillWorldAction::targetState,
+        BoxFillWorldAction::new
+    );
+
     private final BoundingBox box;
     private final BlockState targetState;
     private final LongList sections = new LongArrayList();

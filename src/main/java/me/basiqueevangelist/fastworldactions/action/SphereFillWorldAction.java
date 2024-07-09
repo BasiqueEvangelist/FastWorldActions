@@ -6,9 +6,20 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.function.BiConsumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class SphereFillWorldAction implements WorldAction {
+    public static final StreamCodec<RegistryFriendlyByteBuf, SphereFillWorldAction> STREAM_CODEC = StreamCodec.composite(
+        BlockPos.STREAM_CODEC, SphereFillWorldAction::center,
+        ByteBufCodecs.VAR_INT, SphereFillWorldAction::radius,
+        ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY), SphereFillWorldAction::targetState,
+        SphereFillWorldAction::new
+    );
+
     private final BlockPos center;
     private final int radius;
     private final BlockState targetState;

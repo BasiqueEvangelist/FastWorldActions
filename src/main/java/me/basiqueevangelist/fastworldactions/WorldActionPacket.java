@@ -2,34 +2,24 @@ package me.basiqueevangelist.fastworldactions;
 
 import me.basiqueevangelist.fastworldactions.action.WorldAction;
 import me.basiqueevangelist.fastworldactions.action.WorldActionSync;
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record WorldActionPacket(WorldAction action, boolean notifyNeighbours, boolean notifyListeners,
-                                boolean forceState) implements FabricPacket {
-    public static final PacketType<WorldActionPacket> TYPE = PacketType.create(new ResourceLocation("fast-world-actions:world_action"), WorldActionPacket::read);
-
-    public static WorldActionPacket read(FriendlyByteBuf buf) {
-        WorldAction action = WorldActionSync.read(buf);
-        boolean notifyNeighbours = buf.readBoolean();
-        boolean notifyListeners = buf.readBoolean();
-        boolean forceState = buf.readBoolean();
-
-        return new WorldActionPacket(action, notifyNeighbours, notifyListeners, forceState);
-    }
+                                boolean forceState) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<WorldActionPacket> TYPE = new Type<>(FastWorldActions.id("world_action"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, WorldActionPacket> STREAM_CODEC = StreamCodec.composite(
+        WorldActionSync.ACTION_CODEC, WorldActionPacket::action,
+        ByteBufCodecs.BOOL, WorldActionPacket::notifyNeighbours,
+        ByteBufCodecs.BOOL, WorldActionPacket::notifyListeners,
+        ByteBufCodecs.BOOL, WorldActionPacket::forceState,
+        WorldActionPacket::new
+    );
 
     @Override
-    public void write(FriendlyByteBuf buf) {
-        WorldActionSync.write(buf, action);
-        buf.writeBoolean(notifyNeighbours);
-        buf.writeBoolean(notifyListeners);
-        buf.writeBoolean(forceState);
-    }
-
-    @Override
-    public PacketType<?> getType() {
+    public Type<? extends CustomPacketPayload> type() {
         return TYPE;
     }
 }

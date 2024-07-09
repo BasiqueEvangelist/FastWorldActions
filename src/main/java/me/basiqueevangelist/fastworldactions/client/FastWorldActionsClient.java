@@ -11,12 +11,12 @@ public class FastWorldActionsClient implements ClientModInitializer {
     public void onInitializeClient() {
         PostWorldActionTask.Client.init();
 
-        ClientPlayNetworking.registerGlobalReceiver(WorldActionPacket.TYPE, (packet, player, responseSender) -> {
+        ClientPlayNetworking.registerGlobalReceiver(WorldActionPacket.TYPE, (packet, context) -> {
             FastWorldActions.action(packet.action())
                 .notifyNeighbours(packet.notifyNeighbours())
                 .notifyListeners(packet.notifyListeners())
                 .forceState(packet.forceState())
-                .run(player.clientLevel);
+                .run(context.player().level());
         });
     }
 }

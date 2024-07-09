@@ -6,9 +6,18 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class FixedWorldAction implements WorldAction {
+    public static final StreamCodec<RegistryFriendlyByteBuf, FixedWorldAction> STREAM_CODEC = StreamCodec.composite(
+        ByteBufCodecs.map(HashMap::new, BlockPos.STREAM_CODEC, ByteBufCodecs.idMapper(Block.BLOCK_STATE_REGISTRY)), FixedWorldAction::changes,
+        FixedWorldAction::new
+    );
+
     private final Long2ObjectMap<Map<BlockPos, BlockState>> sections;
     private final Map<BlockPos, BlockState> changes;
 
